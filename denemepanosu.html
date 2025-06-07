@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknofest Savaşan İHA - İnteraktif Proje Panosu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate Blue -->
+    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 5 ana faza (0-4) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. İnteraktif öğeler (işaretlenebilir görevler, dinamik ilerleme çubukları ve genel ilerleme grafiği) statik bir listeyi canlı bir takip aracına dönüştürerek kullanıcı etkileşimini ve motivasyonunu artırır. Bu yapı, bir mühendislik ekibinin proje takibi için hem pratik hem de verimlidir. -->
+    <!-- Visualization & Content Choices: 
+        - Genel İlerleme (Goal: Inform): Projenin genel tamamlanma yüzdesini göstermek için ana içerik alanının üstünde bir Chart.js 'doughnut' grafiği kullanılmıştır. Bu, projenin durumu hakkında anında ve yüksek seviyeli bir görsel özet sunar. Etkileşim: Görevler işaretlendikçe dinamik olarak güncellenir.
+        - Faz İlerlemesi (Goal: Compare): Her fazın kendi tamamlama durumunu göstermek için navigasyon menüsündeki her bir başlığın altında basit bir HTML/CSS ilerleme çubuğu yer alır. Bu, fazlar arası ilerleme karşılaştırmasını kolaylaştırır. Etkileşim: İlgili fazdaki görevler işaretlendikçe güncellenir.
+        - Görev Listesi (Goal: Organize): Her fazın görevleri, etkileşimli onay kutuları içeren yapılandırılmış bir liste olarak sunulur. Bu, görev takibini net ve basit hale getirir. Etkileşim: Kullanıcılar görevleri tamamlandı olarak işaretleyebilir, bu da metnin üzerinin çizilmesiyle görsel olarak belirtilir.
+        - Akış ve Süreç (Goal: Change): Projenin sıralı doğası, navigasyon menüsünün dikey ve numaralandırılmış yapısıyla temsil edilir. Bu, karmaşık bir diyagrama gerek kalmadan sürecin akışını sezgisel olarak gösterir.
+        - Teknik Bilgi (Goal: Inform): Karmaşık teknik terimlerin yanında bulunan bilgi ikonları, üzerine tıklandığında açıklayıcı metinler gösterir. Bu, ek bağlam sağlar ve harici arama ihtiyacını azaltır. Kütüphane/Metot: HTML/CSS/JS ile div gösterme/gizleme.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .task-list input:checked + label { text-decoration: line-through; color: #6b7280; }
+        .phase-nav-item.active { background-color: #334155; color: white; }
+        .info-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .info-icon:hover + .info-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            margin: 0 auto;
+        }
+        .chart-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-80 bg-slate-800 text-white p-6 flex-shrink-0">
+            <h1 class="text-2xl font-bold mb-2">Savaşan İHA Projesi</h1>
+            <p class="text-sm text-slate-400 mb-8">Görev Yazılımı Yol Haritası</p>
+            
+            <nav id="phase-navigation" class="space-y-2">
+                <!-- Navigation items will be injected here by JS -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 sm:p-8 lg:p-10">
+            <div id="main-content-area">
+                <!-- Welcome/Intro Screen -->
+                <div id="welcome-screen" class="h-full flex flex-col justify-center items-center text-center">
+                    <div class="max-w-3xl mx-auto">
+                         <div class="chart-container relative mx-auto mb-8 h-64 w-64">
+                            <canvas id="overallProgressChart"></canvas>
+                            <div id="chart-progress-text" class="chart-progress-text">0%</div>
+                         </div>
+                        <h2 class="text-4xl font-bold text-slate-800 mb-4">Proje Panosuna Hoş Geldiniz</h2>
+                        <p class="text-lg text-slate-600 mb-8">
+                            Bu interaktif pano, Teknofest Savaşan İHA yarışması için geliştirilen görev yazılımının yol haritasını görselleştirmektedir. Soldaki menüden bir faz seçerek görevleri görüntüleyebilir, tamamladığınız görevleri işaretleyerek projenin genel ilerlemesine anlık olarak katkıda bulunabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+                <!-- Phase content will be injected here -->
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    const projectData = [
+        { 
+            name: "FAZ 0: Genel Strateji ve Ön Hazırlık",
+            description: "Bu faz, projenin temel altyapısının kurulmasını kapsar. Sağlam bir başlangıç, ileride yaşanacak sorunları en aza indirir.",
+            tasks: [
+                { text: "Takım içinde yazılım, donanım, simülasyon ve test sorumlularını belirleyin.", done: false },
+                { text: "Bir GitHub veya GitLab reposu oluşturun ve takımı ekleyin.", done: false },
+                { text: "Jetson AGX Orin'i kurun ve Raspi Kamerayı bağlayın.", done: false },
+                { text: "Ubiquiti Wi-Fi sistemini yapılandırın ve ağ bağlantısını test edin.", done: false },
+                { text: "NVIDIA JetPack SDK'sını ve gerekli Python kütüphanelerini kurun.", done: false },
+                { text: "jtop aracını kurarak sistem kaynaklarını izlemeyi öğrenin.", tech: "jtop, sistem kaynaklarını (CPU, GPU, RAM) terminalde izlemek için kullanılan bir araçtır." , done: false },
+                { text: "GStreamer/OpenCV ile kameradan temel görüntü akışını test edin.", tech: "GStreamer, medya pipeline'ları oluşturmak için güçlü bir framework'tür. Jetson'da donanım hızlandırmadan faydalanmak için kritiktir.", done: false }
+            ]
+        },
+        { 
+            name: "FAZ 1: Görüntü İşleme Altyapısı",
+            description: "Bu faz, kameradan gelen ham veriyi yapay zeka modelinin işleyebileceği hale getirmeyi hedefler.",
+            tasks: [
+                { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", done: false },
+                { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", done: false },
+                { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", done: false },
+                { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", done: false }
+            ]
+        },
+        { 
+            name: "FAZ 2: Tespit ve Takip Algoritmaları",
+            description: "Yazılımın kalbi olan bu faz, rakip İHA'yı bulma ve takip etme görevini üstlenir.",
+            tasks: [
+                { text: "Gerçek zamanlı performans için YOLOv11s/n/M gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
+                { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
+                { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", done: false },
+                { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
+                { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını optimize eden bir SDK'dır.", done: false },
+                { text: "Tespit edilen hedefin takibi için KCF, MOSSE veya DeepSORT gibi bir algoritma entegre edin.", tech: "DeepSORT/ByteTrack gibi algoritmalar, YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı bir şekilde takip eder.", done: false },
+                { text: "Takip edilen hedefin merkez noktasını hesaplayan mantığı yazın.", done: false }
+            ]
+        },
+        {
+            name: "FAZ 3: Yapay Hakem Sunucusu ile Haberleşme",
+            description: "Bu faz, yarışma kurallarına uymak ve puan kazanmak için kritiktir.",
+            tasks: [
+                { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır.", done: false },
+                { text: "Python'da `socket` veya `asyncio` ile haberleşme modülü geliştirin.", done: false },
+                { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", done: false },
+                { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", done: false }
+            ]
+        },
+        {
+            name: "FAZ 4: Simülasyon Testleri",
+            description: "Bu faz, fiziksel İHA'yı riske atmadan tüm görev mantığını test etmenizi sağlar.",
+            tasks: [
+                { text: "AirSim veya Gazebo simülasyon ortamını kurun.", tech: "AirSim/Gazebo, robotik ve İHA algoritmalarını test etmek için kullanılan, fotogerçekçi ve fizik tabanlı 3D simülasyon platformlarıdır.", done: false },
+                { text: "Simülasyon ortamına kendi İHA'nızın ve bir hedef İHA'nın modelini ekleyin.", done: false },
+                { text: "Yazılım-içinde-Döngü (SITL) entegrasyonunu sağlayın.", done: false },
+                { text: "Sanal kamera görüntüsü ile tespit ve takip algoritmasını test edin.", done: false },
+                { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", done: false },
+                { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false }
+            ]
+        }
+    ];
+
+    const navigation = document.getElementById('phase-navigation');
+    const mainContentArea = document.getElementById('main-content-area');
+    const welcomeScreen = document.getElementById('welcome-screen');
+
+    let overallProgressChart;
+
+    function renderNavigation() {
+        navigation.innerHTML = '';
+        projectData.forEach((phase, index) => {
+            const completedTasks = phase.tasks.filter(t => t.done).length;
+            const totalTasks = phase.tasks.length;
+            const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+            const navItem = document.createElement('a');
+            navItem.href = '#';
+            navItem.className = 'phase-nav-item block rounded-lg p-4 transition-colors duration-200 hover:bg-slate-700';
+            navItem.dataset.phaseIndex = index;
+            navItem.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">${phase.name}</span>
+                    <span class="text-xs text-slate-400">${completedTasks}/${totalTasks}</span>
+                </div>
+                <div class="w-full bg-slate-600 rounded-full h-1.5">
+                    <div class="bg-sky-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                </div>
+            `;
+            navigation.appendChild(navItem);
+        });
+    }
+
+    function renderPhaseContent(phaseIndex) {
+        welcomeScreen.classList.add('hidden');
+        
+        // Clear previous content
+        const existingContent = document.querySelector('.phase-content');
+        if (existingContent) {
+            existingContent.remove();
+        }
+        
+        const phase = projectData[phaseIndex];
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'phase-content animate-fade-in';
+        
+        let tasksHtml = phase.tasks.map((task, taskIndex) => `
+            <li class="flex items-start p-4 border-b border-slate-200 transition-colors duration-200 hover:bg-slate-100">
+                <input type="checkbox" id="task-${phaseIndex}-${taskIndex}" class="mt-1.5 h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer" 
+                       data-phase-index="${phaseIndex}" data-task-index="${taskIndex}" ${task.done ? 'checked' : ''}>
+                <label for="task-${phaseIndex}-${taskIndex}" class="ml-4 flex-1 text-slate-700 cursor-pointer">${task.text}</label>
+                ${task.tech ? `
+                    <div class="relative flex items-center ml-4">
+                        <span class="info-icon cursor-pointer text-sky-500">ℹ️</span>
+                        <div class="info-tooltip absolute bottom-full mb-2 w-64 bg-slate-800 text-white text-xs rounded py-2 px-3 z-10 -translate-x-1/2 left-1/2">
+                            ${task.tech}
+                        </div>
+                    </div>` : ''}
+            </li>
+        `).join('');
+
+        contentDiv.innerHTML = `
+            <h2 class="text-3xl font-bold text-slate-900 mb-2">${phase.name}</h2>
+            <p class="text-slate-600 mb-8">${phase.description}</p>
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200">
+                <ul class="task-list divide-y divide-slate-200">
+                    ${tasksHtml}
+                </ul>
+            </div>
+        `;
+        mainContentArea.appendChild(contentDiv);
+    }
+
+    function updateOverallProgress() {
+        let totalTasks = 0;
+        let completedTasks = 0;
+        projectData.forEach(phase => {
+            totalTasks += phase.tasks.length;
+            completedTasks += phase.tasks.filter(t => t.done).length;
+        });
+
+        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        const remaining = 100 - progress;
+        
+        // Update progress text
+        const progressText = document.getElementById('chart-progress-text');
+        if (progressText) {
+            progressText.textContent = `${Math.round(progress)}%`;
+        }
+        
+        if (!overallProgressChart) {
+             const ctx = document.getElementById('overallProgressChart').getContext('2d');
+             overallProgressChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tamamlandı', 'Kalan'],
+                    datasets: [{
+                        data: [progress, remaining],
+                        backgroundColor: ['#0ea5e9', '#e2e8f0'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        } else {
+            overallProgressChart.data.datasets[0].data[0] = progress;
+            overallProgressChart.data.datasets[0].data[1] = remaining;
+            overallProgressChart.update();
+        }
+    }
+    
+    function updateUI() {
+        renderNavigation();
+        updateOverallProgress();
+    }
+    
+    navigation.addEventListener('click', (e) => {
+        const navItem = e.target.closest('.phase-nav-item');
+        if (navItem) {
+            e.preventDefault();
+            const phaseIndex = navItem.dataset.phaseIndex;
+            
+            // Update active state
+            document.querySelectorAll('.phase-nav-item').forEach(item => item.classList.remove('active'));
+            navItem.classList.add('active');
+
+            renderPhaseContent(phaseIndex);
+        }
+    });
+
+    mainContentArea.addEventListener('change', (e) => {
+        if (e.target.type === 'checkbox') {
+            const phaseIndex = e.target.dataset.phaseIndex;
+            const taskIndex = e.target.dataset.taskIndex;
+            projectData[phaseIndex].tasks[taskIndex].done = e.target.checked;
+            updateUI();
+        }
+    });
+
+    // Handle tooltip interactions
+    mainContentArea.addEventListener('click', (e) => {
+        if (e.target.classList.contains('info-icon')) {
+            const tooltip = e.target.nextElementSibling;
+            if (tooltip && tooltip.classList.contains('info-tooltip')) {
+                tooltip.style.visibility = tooltip.style.visibility === 'visible' ? 'hidden' : 'visible';
+                tooltip.style.opacity = tooltip.style.opacity === '1' ? '0' : '1';
+            }
+        }
+    });
+
+    // Initial Load
+    updateUI();
+});
+</script>
+</body>
+</html>
