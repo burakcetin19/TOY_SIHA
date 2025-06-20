@@ -1,14 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknofest Savaşan İHA - İnteraktif Proje Panosu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .task-list input:checked + label { text-decoration: line-through; color: #6b7280; }
+        .phase-nav-item.active { background-color: #334155; color: white; }
+        .info-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .info-icon:hover + .info-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-80 bg-slate-800 text-white p-6 flex-shrink-0">
+            <h1 class="text-2xl font-bold mb-2">Savaşan İHA Projesi</h1>
+            <p class="text-sm text-slate-400 mb-8">Görev Yazılımı Yol Haritası</p>
+            
+            <nav id="phase-navigation" class="space-y-2"></nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 sm:p-8 lg:p-10">
+            <div id="main-content-area">
+                <!-- Welcome/Intro Screen -->
+                <div id="welcome-screen" class="h-full flex flex-col justify-center items-center text-center">
+                    <div class="max-w-3xl mx-auto">
+                         <div class="chart-container relative mx-auto mb-8 h-64 w-64">
+                            <canvas id="overallProgressChart"></canvas>
+                         </div>
+                        <h2 class="text-4xl font-bold text-slate-800 mb-4">Proje Panosuna Hoş Geldiniz</h2>
+                        <p class="text-lg text-slate-600 mb-8">
+                            Bu interaktif pano, Teknofest Savaşan İHA yarışması için geliştirilen görev yazılımının yol haritasını görselleştirmektedir. Soldaki menüden bir faz seçerek görevleri görüntüleyebilir, tamamladığınız görevleri işaretleyerek projenin genel ilerlemesine anlık olarak katkıda bulunabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+                <!-- Phase content will be injected here -->
+            </div>
+        </main>
+    </div>
+
+<script>
 document.addEventListener('DOMContentLoaded', () => {
-    const navigation = document.getElementById('phase-navigation');
-    const mainContentArea = document.getElementById('main-content-area');
-    const welcomeScreen = document.getElementById('welcome-screen');
+    // Default data structure
+    let projectData = [
+        { 
+            name: "FAZ 0: Genel Strateji ve Ön Hazırlık",
+            description: "Bu faz, projenin temel altyapısının kurulmasını kapsar.",
+            tasks: [
+                { text: "Takım içinde yazılım, donanım ve test sorumlularını belirleyin.", done: false },
+                { text: "GitHub reposu oluşturun.", done: false }
+            ]
+        },
+        { 
+            name: "FAZ 1: Görüntü İşleme Altyapısı",
+            description: "Bu faz, kameradan gelen ham veriyi işleyebilecek hale getirmeyi hedefler.",
+            tasks: [
+                { text: "Görüntü alma pipeline'ı oluşturun.", done: false },
+                { text: "Preprocessing fonksiyonları yazın.", done: false }
+            ]
+        }
+    ];
 
-    let overallProgressChart;
-
-    function saveToLocalStorage() {
-        localStorage.setItem('projectData', JSON.stringify(projectData));
-    }
-
+    // Load data from localStorage
     function loadFromLocalStorage() {
         const savedData = localStorage.getItem('projectData');
         if (savedData) {
@@ -16,7 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Save data to localStorage
+    function saveToLocalStorage() {
+        localStorage.setItem('projectData', JSON.stringify(projectData));
+    }
+
+    // Update navigation menu
     function renderNavigation() {
+        const navigation = document.getElementById('phase-navigation');
         navigation.innerHTML = '';
         projectData.forEach((phase, index) => {
             const completedTasks = phase.tasks.filter(t => t.done).length;
@@ -40,7 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Render phase content
     function renderPhaseContent(phaseIndex) {
+        const mainContentArea = document.getElementById('main-content-area');
+        const welcomeScreen = document.getElementById('welcome-screen');
         welcomeScreen.classList.add('hidden');
         
         const existingContent = document.querySelector('.phase-content');
@@ -57,13 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="checkbox" id="task-${phaseIndex}-${taskIndex}" class="mt-1.5 h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer" 
                        data-phase-index="${phaseIndex}" data-task-index="${taskIndex}" ${task.done ? 'checked' : ''}>
                 <label for="task-${phaseIndex}-${taskIndex}" class="ml-4 flex-1 text-slate-700 cursor-pointer">${task.text}</label>
-                ${task.tech ? `
-                    <div class="relative flex items-center ml-4">
-                        <span class="info-icon cursor-pointer text-sky-500">ℹ️</span>
-                        <div class="info-tooltip absolute bottom-full mb-2 w-64 bg-slate-800 text-white text-xs rounded py-2 px-3 z-10 -translate-x-1/2 left-1/2">
-                            ${task.tech}
-                        </div>
-                    </div>` : ''}
             </li>
         `).join('');
 
@@ -79,7 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContentArea.appendChild(contentDiv);
     }
 
+    // Update progress chart
     function updateOverallProgress() {
+        const ctx = document.getElementById('overallProgressChart').getContext('2d');
         let totalTasks = 0;
         let completedTasks = 0;
         projectData.forEach(phase => {
@@ -89,65 +163,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         const remaining = 100 - progress;
-        
-        if (!overallProgressChart) {
-             const ctx = document.getElementById('overallProgressChart').getContext('2d');
-             overallProgressChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Tamamlandı', 'Kalan'],
-                    datasets: [{
-                        data: [progress, remaining],
-                        backgroundColor: ['#0ea5e9', '#e2e8f0'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    }
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Tamamlandı', 'Kalan'],
+                datasets: [{
+                    data: [progress, remaining],
+                    backgroundColor: ['#0ea5e9', '#e2e8f0'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
                 }
-            });
-        } else {
-            overallProgressChart.data.datasets[0].data[0] = progress;
-            overallProgressChart.data.datasets[0].data[1] = remaining;
-            overallProgressChart.update();
-        }
+            }
+        });
     }
-    
+
+    // Initialize UI
     function updateUI() {
         renderNavigation();
         updateOverallProgress();
     }
-    
-    navigation.addEventListener('click', (e) => {
+
+    // Event listeners
+    document.getElementById('phase-navigation').addEventListener('click', (e) => {
         const navItem = e.target.closest('.phase-nav-item');
         if (navItem) {
             e.preventDefault();
             const phaseIndex = navItem.dataset.phaseIndex;
-            
-            document.querySelectorAll('.phase-nav-item').forEach(item => item.classList.remove('active'));
-            navItem.classList.add('active');
-
             renderPhaseContent(phaseIndex);
         }
     });
 
-    mainContentArea.addEventListener('change', (e) => {
+    document.getElementById('main-content-area').addEventListener('change', (e) => {
         if (e.target.type === 'checkbox') {
             const phaseIndex = e.target.dataset.phaseIndex;
             const taskIndex = e.target.dataset.taskIndex;
             projectData[phaseIndex].tasks[taskIndex].done = e.target.checked;
-            saveToLocalStorage(); // Durumu kaydet
+            saveToLocalStorage(); // Save state
             updateUI();
         }
     });
 
-    loadFromLocalStorage(); // Veriyi yükle
+    // Load data and initialize
+    loadFromLocalStorage();
     updateUI();
 });
+</script>
+</body>
+</html>
