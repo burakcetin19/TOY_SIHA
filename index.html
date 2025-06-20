@@ -49,6 +49,20 @@
         <nav id="phase-navigation" class="space-y-2">
             <!-- Navigation items will be injected here by JS -->
         </nav>
+        
+        <!-- Data Management -->
+        <div class="mt-8 pt-6 border-t border-slate-600">
+            <h3 class="text-sm font-medium text-slate-300 mb-3">Veri Yönetimi</h3>
+            <div class="space-y-2">
+                <button id="export-data" class="w-full text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded transition-colors">
+                    İlerlemeyi İndir
+                </button>
+                <input type="file" id="import-data" accept=".json" class="hidden">
+                <button id="import-btn" class="w-full text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded transition-colors">
+                    İlerlemeyi Yükle
+                </button>
+            </div>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -90,14 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveProjectData() {
         try {
-            if (typeof Storage !== "undefined") {
-                // Store data in memory as fallback
-                window.projectDataMemory = JSON.stringify(projectData);
-            }
+            localStorage.setItem(storageKey, JSON.stringify(projectData));
         } catch (e) {
-            console.warn('Storage save failed:', e);
-            // Store in memory as fallback
-            window.projectDataMemory = JSON.stringify(projectData);
+            console.warn('LocalStorage save failed:', e);
         }
     }
 
@@ -192,30 +201,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         try {
-            let savedDataString = null;
-            if (typeof Storage !== "undefined") {
-                // Try memory first, then localStorage
-                savedDataString = window.projectDataMemory || null;
-            }
+            const savedDataString = localStorage.getItem(storageKey);
             
             if (savedDataString) {
-                try {
-                    const savedProjectData = JSON.parse(savedDataString);
-                    projectData = defaultProjectData.map((defaultPhase) => {
-                        const savedPhase = savedProjectData.find(p => p.name === defaultPhase.name);
-                        if (savedPhase) {
-                            const newTasks = defaultPhase.tasks.map((defaultTask) => {
-                                const savedTask = savedPhase.tasks ? savedPhase.tasks.find(t => t.text === defaultTask.text) : null;
-                                return savedTask ? { ...defaultTask, done: savedTask.done } : defaultTask;
-                            });
-                            return { ...defaultPhase, tasks: newTasks };
-                        }
-                        return defaultPhase;
-                    });
-                } catch (parseError) {
-                    console.warn('Data parse failed, using defaults:', parseError);
-                    projectData = defaultProjectData;
-                }
+                const savedProjectData = JSON.parse(savedDataString);
+                
+                // Merge saved data with default data structure
+                projectData = defaultProjectData.map((defaultPhase) => {
+                    const savedPhase = savedProjectData.find(p => p.name === defaultPhase.name);
+                    if (savedPhase && savedPhase.tasks) {
+                        const mergedTasks = defaultPhase.tasks.map((defaultTask) => {
+                            const savedTask = savedPhase.tasks.find(t => t.text === defaultTask.text);
+                            return savedTask ? { ...defaultTask, done: savedTask.done } : defaultTask;
+                        });
+                        return { ...defaultPhase, tasks: mergedTasks };
+                    }
+                    return defaultPhase;
+                });
             } else {
                 projectData = defaultProjectData;
             }
@@ -348,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskIndex = parseInt(e.target.dataset.taskIndex);
             if (projectData[phaseIndex] && projectData[phaseIndex].tasks[taskIndex]) {
                 projectData[phaseIndex].tasks[taskIndex].done = e.target.checked;
+                console.log('Task updated:', phaseIndex, taskIndex, e.target.checked);
                 saveProjectData();
                 updateUI();
             }
@@ -358,10 +361,71 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         loadProjectData();
         updateUI();
+        
+        // Setup data management
+        setupDataManagement();
     } catch (error) {
         console.error('Initialization error:', error);
         // Fallback: Create minimal UI
         navigation.innerHTML = '<div class="text-red-400 p-4">Yükleme hatası oluştu</div>';
+    }
+    
+    function setupDataManagement() {
+        const exportBtn = document.getElementById('export-data');
+        const importBtn = document.getElementById('import-btn');
+        const importFile = document.getElementById('import-data');
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                const dataStr = JSON.stringify(projectData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `teknofest-iha-ilerleme-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        if (importBtn && importFile) {
+            importBtn.addEventListener('click', () => {
+                importFile.click();
+            });
+            
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            // Merge imported data with current structure
+                            projectData = projectData.map((currentPhase) => {
+                                const importedPhase = importedData.find(p => p.name === currentPhase.name);
+                                if (importedPhase) {
+                                    const mergedTasks = currentPhase.tasks.map((currentTask) => {
+                                        const importedTask = importedPhase.tasks.find(t => t.text === currentTask.text);
+                                        return importedTask ? { ...currentTask, done: importedTask.done } : currentTask;
+                                    });
+                                    return { ...currentPhase, tasks: mergedTasks };
+                                }
+                                return currentPhase;
+                            });
+                            saveProjectData();
+                            updateUI();
+                            alert('İlerleme başarıyla yüklendi!');
+                        } catch (error) {
+                            alert('Dosya yüklenirken hata oluştu. Lütfen geçerli bir JSON dosyası seçin.');
+                            console.error('Import error:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        }
     }
 });
 </script>
