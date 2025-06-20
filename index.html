@@ -19,10 +19,38 @@
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
+            max-width: 300px;
+            word-wrap: break-word;
+            z-index: 1000;
         }
         .info-icon:hover + .info-tooltip {
             visibility: visible;
             opacity: 1;
+        }
+        /* Tooltip positioning variants */
+        .tooltip-left {
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-right: 8px;
+        }
+        .tooltip-right {
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 8px;
+        }
+        .tooltip-top {
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+        }
+        .tooltip-bottom {
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 8px;
         }
         .animate-fade-in {
             animation: fadeIn 0.3s ease-in;
