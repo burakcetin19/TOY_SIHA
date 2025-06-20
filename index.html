@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Slate Blue -->
-    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 5 ana faza (0-4) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. İnteraktif öğeler (işaretlenebilir görevler, dinamik ilerleme çubukları ve genel ilerleme grafiği) statik bir listeyi canlı bir takip aracına dönüştürerek kullanıcı etkileşimini ve motivasyonunu artırır. Bu yapı, bir mühendislik ekibinin proje takibi için hem pratik hem de verimlidir. -->
+    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 7 ana faza (0-6) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. İnteraktif öğeler (işaretlenebilir görevler, dinamik ilerleme çubukları ve genel ilerleme grafiği) statik bir listeyi canlı bir takip aracına dönüştürerek kullanıcı etkileşimini ve motivasyonunu artırır. Bu yapı, bir mühendislik ekibinin proje takibi için hem pratik hem de verimlidir. -->
     <!-- Visualization & Content Choices: 
         - Genel İlerleme (Goal: Inform): Projenin genel tamamlanma yüzdesini göstermek için ana içerik alanının üstünde bir Chart.js 'doughnut' grafiği kullanılmıştır. Bu, projenin durumu hakkında anında ve yüksek seviyeli bir görsel özet sunar. Etkileşim: Görevler işaretlendikçe dinamik olarak güncellenir.
         - Faz İlerlemesi (Goal: Compare): Her fazın kendi tamamlama durumunu göstermek için navigasyon menüsündeki her bir başlığın altında basit bir HTML/CSS ilerleme çubuğu yer alır. Bu, fazlar arası ilerleme karşılaştırmasını kolaylaştırır. Etkileşim: İlgili fazdaki görevler işaretlendikçe güncellenir.
@@ -31,26 +31,6 @@
         .info-icon:hover + .info-tooltip {
             visibility: visible;
             opacity: 1;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .chart-container {
-            position: relative;
-            margin: 0 auto;
-        }
-        .chart-progress-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #1e293b;
         }
     </style>
 </head>
@@ -75,7 +55,6 @@
                     <div class="max-w-3xl mx-auto">
                          <div class="chart-container relative mx-auto mb-8 h-64 w-64">
                             <canvas id="overallProgressChart"></canvas>
-                            <div id="chart-progress-text" class="chart-progress-text">0%</div>
                          </div>
                         <h2 class="text-4xl font-bold text-slate-800 mb-4">Proje Panosuna Hoş Geldiniz</h2>
                         <p class="text-lg text-slate-600 mb-8">
@@ -119,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             name: "FAZ 2: Tespit ve Takip Algoritmaları",
             description: "Yazılımın kalbi olan bu faz, rakip İHA'yı bulma ve takip etme görevini üstlenir.",
             tasks: [
-                { text: "Gerçek zamanlı performans için YOLOv11s/n/M gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
+                { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
                 { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
                 { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", done: false },
                 { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
@@ -148,6 +127,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 { text: "Sanal kamera görüntüsü ile tespit ve takip algoritmasını test edin.", done: false },
                 { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", done: false },
                 { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false }
+            ]
+        },
+        {
+            name: "FAZ 5: QR Kod Görevi",
+            description: "Bu faz, yarışmanın otonom görevlerinden biri olan QR kodun tespiti ve okunmasını kapsar.",
+            tasks: [
+                { text: "`pyzbar` veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", done: false },
+                { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", done: false },
+                { text: "Kamera akışından gelen görüntülerde QR kodlarını tespit edip çözen (decode) bir fonksiyon yazın.", done: false },
+                { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", done: false },
+                { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", done: false }
+            ]
+        },
+        {
+            name: "FAZ 6: Yer İstasyonu Arayüzü (UI)",
+            description: "Bu faz, yarışma sırasında operatörün sistemi etkin bir şekilde izlemesi ve yönetmesi için kullanıcı arayüzünün geliştirilmesini içerir.",
+            tasks: [
+                { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", done: false },
+                { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", done: false },
+                { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", done: false },
+                { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", done: false },
+                { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", done: false },
+                { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false }
             ]
         }
     ];
@@ -185,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPhaseContent(phaseIndex) {
         welcomeScreen.classList.add('hidden');
         
-        // Clear previous content
         const existingContent = document.querySelector('.phase-content');
         if (existingContent) {
             existingContent.remove();
@@ -233,12 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         const remaining = 100 - progress;
         
-        // Update progress text
-        const progressText = document.getElementById('chart-progress-text');
-        if (progressText) {
-            progressText.textContent = `${Math.round(progress)}%`;
-        }
-        
         if (!overallProgressChart) {
              const ctx = document.getElementById('overallProgressChart').getContext('2d');
              overallProgressChart = new Chart(ctx, {
@@ -280,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const phaseIndex = navItem.dataset.phaseIndex;
             
-            // Update active state
             document.querySelectorAll('.phase-nav-item').forEach(item => item.classList.remove('active'));
             navItem.classList.add('active');
 
@@ -297,18 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle tooltip interactions
-    mainContentArea.addEventListener('click', (e) => {
-        if (e.target.classList.contains('info-icon')) {
-            const tooltip = e.target.nextElementSibling;
-            if (tooltip && tooltip.classList.contains('info-tooltip')) {
-                tooltip.style.visibility = tooltip.style.visibility === 'visible' ? 'hidden' : 'visible';
-                tooltip.style.opacity = tooltip.style.opacity === '1' ? '0' : '1';
-            }
-        }
-    });
-
-    // Initial Load
     updateUI();
 });
 </script>
