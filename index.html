@@ -19,38 +19,21 @@
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
-            max-width: 300px;
+            position: fixed;
+            max-width: 280px;
+            width: max-content;
             word-wrap: break-word;
             z-index: 1000;
+            background: #1e293b;
+            color: white;
+            font-size: 11px;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-        .info-icon:hover + .info-tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        /* Tooltip positioning variants */
-        .tooltip-left {
-            right: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            margin-right: 8px;
-        }
-        .tooltip-right {
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            margin-left: 8px;
-        }
-        .tooltip-top {
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-bottom: 8px;
-        }
-        .tooltip-bottom {
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-top: 8px;
+        /* Remove old positioning classes */
+        .tooltip-left, .tooltip-right, .tooltip-top, .tooltip-bottom {
+            display: none;
         }
         .animate-fade-in {
             animation: fadeIn 0.3s ease-in;
@@ -342,11 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
                        class="ml-4 flex-1 text-slate-700 cursor-pointer leading-relaxed">${task.text}</label>
                 ${task.tech ? `
                     <div class="relative flex items-center ml-4">
-                        <span class="info-icon cursor-pointer text-sky-500 hover:text-sky-600 text-lg">ℹ️</span>
-                        <div class="info-tooltip absolute bottom-full mb-2 w-72 bg-slate-800 text-white text-xs rounded-lg py-3 px-4 z-20 -translate-x-1/2 left-1/2 shadow-lg">
-                            <div class="font-medium mb-1">Teknik Bilgi:</div>
-                            ${task.tech}
-                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                        <span class="info-icon cursor-pointer text-sky-500 hover:text-sky-600 text-lg" data-tooltip="${task.tech.replace(/"/g, '&quot;')}">ℹ️</span>
+                        <div class="info-tooltip">
+                            <div class="font-medium mb-2 text-sky-200">Teknik Bilgi:</div>
+                            <div>${task.tech}</div>
                         </div>
                     </div>` : ''}
             </li>
@@ -367,6 +349,54 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         mainContentArea.appendChild(contentDiv);
+    }
+    
+    function positionTooltip(icon, tooltip) {
+        const iconRect = icon.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Temporarily show tooltip to measure its dimensions
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '1';
+        tooltip.style.display = 'block';
+        
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const tooltipWidth = tooltipRect.width;
+        const tooltipHeight = tooltipRect.height;
+        
+        let left = iconRect.left + iconRect.width + 10; // Default: right of icon
+        let top = iconRect.top + (iconRect.height / 2) - (tooltipHeight / 2); // Vertically centered
+        
+        // Check if tooltip goes off the right edge
+        if (left + tooltipWidth > viewportWidth - 20) {
+            left = iconRect.left - tooltipWidth - 10; // Move to left of icon
+        }
+        
+        // Check if tooltip goes off the left edge
+        if (left < 20) {
+            left = 20;
+            top = iconRect.bottom + 10; // Move below icon
+        }
+        
+        // Check if tooltip goes off the bottom edge
+        if (top + tooltipHeight > viewportHeight - 20) {
+            top = iconRect.top - tooltipHeight - 10; // Move above icon
+        }
+        
+        // Check if tooltip goes off the top edge
+        if (top < 20) {
+            top = 20;
+        }
+        
+        // Ensure tooltip stays within viewport bounds
+        left = Math.max(20, Math.min(left, viewportWidth - tooltipWidth - 20));
+        top = Math.max(20, Math.min(top, viewportHeight - tooltipHeight - 20));
+        
+        // Apply final positioning
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.style.visibility = 'visible';
     }
 
     function updateOverallProgress() {
@@ -420,6 +450,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // Global tooltip event delegation for dynamic content
+    document.addEventListener('mouseenter', (e) => {
+        if (e.target.classList.contains('info-icon')) {
+            const tooltip = e.target.nextElementSibling;
+            if (tooltip && tooltip.classList.contains('info-tooltip')) {
+                positionTooltip(e.target, tooltip);
+            }
+        }
+    }, true);
+    
+    document.addEventListener('mouseleave', (e) => {
+        if (e.target.classList.contains('info-icon')) {
+            const tooltip = e.target.nextElementSibling;
+            if (tooltip && tooltip.classList.contains('info-tooltip')) {
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.opacity = '0';
+            }
+        }
+    }, true);
 
     // Initialize Application
     try {
