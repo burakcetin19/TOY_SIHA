@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Slate Blue -->
-    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 7 ana faza (0-6) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. İnteraktif öğeler (işaretlenebilir görevler, dinamik ilerleme çubukları ve genel ilerleme grafiği) statik bir listeyi canlı bir takip aracına dönüştürerek kullanıcı etkileşimini ve motivasyonunu artırır. localStorage entegrasyonu ile görev durumları kalıcı hale getirilmiştir. -->
+    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 7 ana faza (0-6) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. localStorage entegrasyonu ile görev durumları kalıcı hale getirilmiştir ve eski veri yapıları otomatik olarak güncellenir. -->
     <!-- Visualization & Content Choices: 
         - Genel İlerleme (Goal: Inform): Projenin genel tamamlanma yüzdesini göstermek için ana içerik alanının üstünde bir Chart.js 'doughnut' grafiği kullanılmıştır. Bu, projenin durumu hakkında anında ve yüksek seviyeli bir görsel özet sunar. Etkileşim: Görevler işaretlendikçe dinamik olarak güncellenir.
         - Faz İlerlemesi (Goal: Compare): Her fazın kendi tamamlama durumunu göstermek için navigasyon menüsündeki her bir başlığın altında basit bir HTML/CSS ilerleme çubuğu yer alır. Bu, fazlar arası ilerleme karşılaştırmasını kolaylaştırır. Etkileşim: İlgili fazdaki görevler işaretlendikçe güncellenir.
@@ -79,94 +79,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadProjectData() {
-        const savedData = localStorage.getItem(storageKey);
-        if (savedData) {
-            projectData = JSON.parse(savedData);
-        } else {
-            projectData = [
-                { 
-                    name: "FAZ 0: Genel Strateji ve Ön Hazırlık",
-                    description: "Bu faz, projenin temel altyapısının kurulmasını kapsar. Sağlam bir başlangıç, ileride yaşanacak sorunları en aza indirir.",
-                    tasks: [
-                        { text: "Takım içinde yazılım, donanım, simülasyon ve test sorumlularını belirleyin.", done: false },
-                        { text: "Bir GitHub veya GitLab reposu oluşturun ve takımı ekleyin.", done: false },
-                        { text: "Jetson AGX Orin'i kurun ve Raspi Kamerayı bağlayın.", done: false },
-                        { text: "Ubiquiti Wi-Fi sistemini yapılandırın ve ağ bağlantısını test edin.", done: false },
-                        { text: "NVIDIA JetPack SDK'sını ve gerekli Python kütüphanelerini kurun.", done: false },
-                        { text: "jtop aracını kurarak sistem kaynaklarını izlemeyi öğrenin.", tech: "jtop, sistem kaynaklarını (CPU, GPU, RAM) terminalde izlemek için kullanılan bir araçtır." , done: false },
-                        { text: "GStreamer/OpenCV ile kameradan temel görüntü akışını test edin.", tech: "GStreamer, medya pipeline'ları oluşturmak için güçlü bir framework'tür. Jetson'da donanım hızlandırmadan faydalanmak için kritiktir.", done: false }
-                    ]
-                },
-                { 
-                    name: "FAZ 1: Görüntü İşleme Altyapısı",
-                    description: "Bu faz, kameradan gelen ham veriyi yapay zeka modelinin işleyebileceği hale getirmeyi hedefler.",
-                    tasks: [
-                        { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", done: false },
-                        { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", done: false },
-                        { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", done: false },
-                        { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", done: false }
-                    ]
-                },
-                { 
-                    name: "FAZ 2: Tespit ve Takip Algoritmaları",
-                    description: "Yazılımın kalbi olan bu faz, rakip İHA'yı bulma ve takip etme görevini üstlenir.",
-                    tasks: [
-                        { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
-                        { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
-                        { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", done: false },
-                        { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
-                        { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını optimize eden bir SDK'dır.", done: false },
-                        { text: "Tespit edilen hedefin takibi için KCF, MOSSE veya DeepSORT gibi bir algoritma entegre edin.", tech: "DeepSORT/ByteTrack gibi algoritmalar, YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı bir şekilde takip eder.", done: false },
-                        { text: "Takip edilen hedefin merkez noktasını hesaplayan mantığı yazın.", done: false }
-                    ]
-                },
-                {
-                    name: "FAZ 3: Yapay Hakem Sunucusu ile Haberleşme",
-                    description: "Bu faz, yarışma kurallarına uymak ve puan kazanmak için kritiktir.",
-                    tasks: [
-                        { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır.", done: false },
-                        { text: "Python'da `socket` veya `asyncio` ile haberleşme modülü geliştirin.", done: false },
-                        { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", done: false },
-                        { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", done: false }
-                    ]
-                },
-                {
-                    name: "FAZ 4: Simülasyon Testleri",
-                    description: "Bu faz, fiziksel İHA'yı riske atmadan tüm görev mantığını test etmenizi sağlar.",
-                    tasks: [
-                        { text: "AirSim veya Gazebo simülasyon ortamını kurun.", tech: "AirSim/Gazebo, robotik ve İHA algoritmalarını test etmek için kullanılan, fotogerçekçi ve fizik tabanlı 3D simülasyon platformlarıdır.", done: false },
-                        { text: "Simülasyon ortamına kendi İHA'nızın ve bir hedef İHA'nın modelini ekleyin.", done: false },
-                        { text: "Yazılım-içinde-Döngü (SITL) entegrasyonunu sağlayın.", done: false },
-                        { text: "Sanal kamera görüntüsü ile tespit ve takip algoritmasını test edin.", done: false },
-                        { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", done: false },
-                        { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false }
-                    ]
-                },
-                {
-                    name: "FAZ 5: QR Kod Görevi",
-                    description: "Bu faz, yarışmanın otonom görevlerinden biri olan QR kodun tespiti ve okunmasını kapsar.",
-                    tasks: [
-                        { text: "`pyzbar` veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", done: false },
-                        { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", done: false },
-                        { text: "Kamera akışından gelen görüntülerde QR kodlarını tespit edip çözen (decode) bir fonksiyon yazın.", done: false },
-                        { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", done: false },
-                        { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", done: false }
-                    ]
-                },
-                {
-                    name: "FAZ 6: Yer İstasyonu Arayüzü (UI)",
-                    description: "Bu faz, yarışma sırasında operatörün sistemi etkin bir şekilde izlemesi ve yönetmesi için kullanıcı arayüzünün geliştirilmesini içerir.",
-                    tasks: [
-                        { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", done: false },
-                        { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", done: false },
-                        { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", done: false },
-                        { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", done: false },
-                        { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", done: false },
-                        { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false }
-                    ]
+        const defaultProjectData = [
+            { 
+                name: "FAZ 0: Genel Strateji ve Ön Hazırlık",
+                description: "Bu faz, projenin temel altyapısının kurulmasını kapsar. Sağlam bir başlangıç, ileride yaşanacak sorunları en aza indirir.",
+                tasks: [
+                    { text: "Takım içinde yazılım, donanım, simülasyon ve test sorumlularını belirleyin.", done: false },
+                    { text: "Bir GitHub veya GitLab reposu oluşturun ve takımı ekleyin.", done: false },
+                    { text: "Jetson AGX Orin'i kurun ve Raspi Kamerayı bağlayın.", done: false },
+                    { text: "Ubiquiti Wi-Fi sistemini yapılandırın ve ağ bağlantısını test edin.", done: false },
+                    { text: "NVIDIA JetPack SDK'sını ve gerekli Python kütüphanelerini kurun.", done: false },
+                    { text: "jtop aracını kurarak sistem kaynaklarını izlemeyi öğrenin.", tech: "jtop, sistem kaynaklarını (CPU, GPU, RAM) terminalde izlemek için kullanılan bir araçtır." , done: false },
+                    { text: "GStreamer/OpenCV ile kameradan temel görüntü akışını test edin.", tech: "GStreamer, medya pipeline'ları oluşturmak için güçlü bir framework'tür. Jetson'da donanım hızlandırmadan faydalanmak için kritiktir.", done: false }
+                ]
+            },
+            { 
+                name: "FAZ 1: Görüntü İşleme Altyapısı",
+                description: "Bu faz, kameradan gelen ham veriyi yapay zeka modelinin işleyebileceği hale getirmeyi hedefler.",
+                tasks: [
+                    { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", done: false },
+                    { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", done: false },
+                    { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", done: false },
+                    { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", done: false }
+                ]
+            },
+            { 
+                name: "FAZ 2: Tespit ve Takip Algoritmaları",
+                description: "Yazılımın kalbi olan bu faz, rakip İHA'yı bulma ve takip etme görevini üstlenir.",
+                tasks: [
+                    { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
+                    { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
+                    { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", done: false },
+                    { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
+                    { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını optimize eden bir SDK'dır.", done: false },
+                    { text: "Tespit edilen hedefin takibi için KCF, MOSSE veya DeepSORT gibi bir algoritma entegre edin.", tech: "DeepSORT/ByteTrack gibi algoritmalar, YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı bir şekilde takip eder.", done: false },
+                    { text: "Takip edilen hedefin merkez noktasını hesaplayan mantığı yazın.", done: false }
+                ]
+            },
+            {
+                name: "FAZ 3: Yapay Hakem Sunucusu ile Haberleşme",
+                description: "Bu faz, yarışma kurallarına uymak ve puan kazanmak için kritiktir.",
+                tasks: [
+                    { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır.", done: false },
+                    { text: "Python'da `socket` veya `asyncio` ile haberleşme modülü geliştirin.", done: false },
+                    { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", done: false },
+                    { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", done: false }
+                ]
+            },
+            {
+                name: "FAZ 4: Simülasyon Testleri",
+                description: "Bu faz, fiziksel İHA'yı riske atmadan tüm görev mantığını test etmenizi sağlar.",
+                tasks: [
+                    { text: "AirSim veya Gazebo simülasyon ortamını kurun.", tech: "AirSim/Gazebo, robotik ve İHA algoritmalarını test etmek için kullanılan, fotogerçekçi ve fizik tabanlı 3D simülasyon platformlarıdır.", done: false },
+                    { text: "Simülasyon ortamına kendi İHA'nızın ve bir hedef İHA'nın modelini ekleyin.", done: false },
+                    { text: "Yazılım-içinde-Döngü (SITL) entegrasyonunu sağlayın.", done: false },
+                    { text: "Sanal kamera görüntüsü ile tespit ve takip algoritmasını test edin.", done: false },
+                    { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", done: false },
+                    { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false }
+                ]
+            },
+            {
+                name: "FAZ 5: QR Kod Görevi",
+                description: "Bu faz, yarışmanın otonom görevlerinden biri olan QR kodun tespiti ve okunmasını kapsar.",
+                tasks: [
+                    { text: "`pyzbar` veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", done: false },
+                    { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", done: false },
+                    { text: "Kamera akışından gelen görüntülerde QR kodlarını tespit edip çözen (decode) bir fonksiyon yazın.", done: false },
+                    { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", done: false },
+                    { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", done: false }
+                ]
+            },
+            {
+                name: "FAZ 6: Yer İstasyonu Arayüzü (UI)",
+                description: "Bu faz, yarışma sırasında operatörün sistemi etkin bir şekilde izlemesi ve yönetmesi için kullanıcı arayüzünün geliştirilmesini içerir.",
+                tasks: [
+                    { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", done: false },
+                    { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", done: false },
+                    { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", done: false },
+                    { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", done: false },
+                    { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", done: false },
+                    { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false }
+                ]
+            }
+        ];
+
+        const savedDataString = localStorage.getItem(storageKey);
+        if (savedDataString) {
+            const savedProjectData = JSON.parse(savedDataString);
+            projectData = defaultProjectData.map((defaultPhase, phaseIndex) => {
+                const savedPhase = savedProjectData.find(p => p.name === defaultPhase.name);
+                if (savedPhase) {
+                    const newTasks = defaultPhase.tasks.map((defaultTask) => {
+                        const savedTask = savedPhase.tasks.find(t => t.text === defaultTask.text);
+                        return savedTask ? { ...defaultTask, done: savedTask.done } : defaultTask;
+                    });
+                    return { ...defaultPhase, tasks: newTasks };
                 }
-            ];
+                return defaultPhase;
+            });
+        } else {
+            projectData = defaultProjectData;
         }
+        saveProjectData(); // Ensure the full, potentially merged data is saved back.
     }
 
     const navigation = document.getElementById('phase-navigation');
