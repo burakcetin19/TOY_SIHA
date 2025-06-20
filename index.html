@@ -129,34 +129,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: "FAZ 1: Görüntü İşleme Altyapısı",
                 description: "Bu faz, kameradan gelen ham veriyi yapay zeka modelinin işleyebileceği hale getirmeyi hedefler.",
                 tasks: [
-                    { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", tech: "Pipeline, veri işleme sürecinin birbirine bağlı adımlar halinde organize edilmesidir.", done: false },
-                    { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", done: false },
-                    { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", tech: "RTP/RTSP, gerçek zamanlı medya aktarımı için kullanılan protokollerdir.", done: false },
-                    { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", done: false }
+                    { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", tech: "Pipeline örneği: nvarguscamerasrc ! nvvidconv ! video/x-raw(memory:NVMM) ! appsink. Hardware encoder/decoder kullanarak CPU yükünü azaltır.", done: false },
+                    { text: "Kamera kalibrasyonu yapın ve distortion correction uygulayın.", tech: "Kamera kalibrasyonu lens bozulmalarını düzeltir. OpenCV'nin calibrateCamera() fonksiyonu ile yapılır. Checkerboard pattern kullanın.", done: false },
+                    { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", tech: "YOLO için genelde 640x640 input kullanılır. Normalizasyon: pixel değerlerini 0-1 arasına getirme (value/255.0). Mean-std normalization da uygulanabilir.", done: false },
+                    { text: "Real-time image enhancement teknikleri uygulayın (contrast, brightness).", tech: "CLAHE (Contrast Limited Adaptive Histogram Equalization) düşük ışıkta görüntü kalitesini artırır. Gamma correction ve bilateral filter de kullanılabilir.", done: false },
+                    { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", tech: "RTSP (Real Time Streaming Protocol) canlı video akışı için standart protokoldür. H.265 daha iyi sıkıştırma sağlar ama H.264 daha uyumludur.", done: false },
+                    { text: "Video akışında latency optimizasyonu yapın.", tech: "Buffer size'ı minimize edin, hardware encoder kullanın, UDP protokolü tercih edin. Target latency <100ms olmalı.", done: false },
+                    { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", tech: "OpenCV imshow() veya PyQt/Tkinter ile basit viewer oluşturabilirsiniz. VLC media player da RTSP akışını gösterebilir.", done: false },
+                    { text: "Çoklu kamera desteği için multi-threading implementasyonu yapın.", tech: "Her kamera için ayrı thread oluşturun. Queue yapısı kullanarak frame'leri paylaşın. Thread safety için lock mekanizması ekleyin.", done: false }
                 ]
             },
             { 
                 name: "FAZ 2: Tespit ve Takip Algoritmaları",
                 description: "Yazılımın kalbi olan bu faz, rakip İHA'yı bulma ve takip etme görevini üstlenir.",
                 tasks: [
-                    { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
-                    { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
-                    { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", tech: "Data augmentation, mevcut veriye çeşitli dönüşümler uygulayarak veri setini genişletme tekniğidir.", done: false },
-                    { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
-                    { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını optimize eden bir SDK'dır.", done: false },
-                    { text: "Tespit edilen hedefin takibi için KCF, MOSSE veya DeepSORT gibi bir algoritma entegre edin.", tech: "DeepSORT/ByteTrack gibi algoritmalar, YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı bir şekilde takip eder.", done: false },
-                    { text: "Takip edilen hedefin merkez noktasını hesaplayan mantığı yazın.", done: false }
+                    { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir. YOLOv8 daha hızlı, YOLOv9 daha doğru sonuçlar verir.", done: false },
+                    { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", tech: "Veri seti kalitesi modelin başarısını doğrudan etkiler. Farklı ışık, hava durumu, mesafe ve açılarda en az 1000+ etiketli görüntü gerekir.", done: false },
+                    { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", tech: "Data augmentation: döndürme, çevirme, renk değişimi, blur, noise ekleme gibi tekniklerle veri setini 3-5 kat büyütür ve modelin genelleme yeteneğini artırır.", done: false },
+                    { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", tech: "GPU üzerinde eğitim yapın. Batch size, learning rate ve epoch sayısını veri setinize göre ayarlayın. Validation loss'u takip ederek overfitting'i önleyin.", done: false },
+                    { text: "Eğitilmiş modeli doğruluk metriklerini analiz edin (mAP, precision, recall).", tech: "mAP (mean Average Precision): modelin genel performansını gösterir. Precision: tespit edilen nesnelerin ne kadarının doğru olduğu. Recall: gerçek nesnelerin ne kadarının bulunduğu.", done: false },
+                    { text: "Model performansını artırmak için hiperparametre optimizasyonu yapın.", tech: "Learning rate, batch size, optimizer (Adam, SGD), data augmentation parametrelerini grid search veya random search ile optimize edin.", done: false },
+                    { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını 2-5x hızlandıran bir SDK'dır. FP16 precision kullanarak daha da hızlandırabilirsiniz.", done: false },
+                    { text: "TensorRT modelinin doğruluğunu orijinal model ile karşılaştırın.", tech: "Optimizasyon sonrası doğruluk kaybı %1-2'yi geçmemeli. Eğer fazla kayıp varsa FP32 precision kullanın veya calibration dataset'ini iyileştirin.", done: false },
+                    { text: "Modelin farklı input boyutlarında performansını test edin.", tech: "416x416, 640x640 gibi farklı resolution'larda hız-doğruluk trade-off'unu test edin. Daha büyük input daha doğru ama yavaş sonuç verir.", done: false },
+                    { text: "Multi-object tracking için TCTrack++ algoritmasını entegre edin.", tech: "TCTrack++, transformer tabanlı modern takip algoritmasıdır. YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı şekilde takip eder. DeepSORT'tan daha iyi performans gösterir.", done: false },
+                    { text: "TCTrack++ için gerekli kütüphaneleri kurun (PyTorch, OpenCV, numpy).", tech: "TCTrack++ PyTorch üzerinde çalışır. CUDA destekli PyTorch versiyonu GPU hızlandırması için gereklidir. OpenCV görüntü işleme için kullanılır.", done: false },
+                    { text: "TCTrack++ modelini indirin ve ağırlıkları yükleyin.", tech: "Önceden eğitilmiş model ağırlıklarını GitHub'dan indirin. MOT17 veya MOT20 dataset'i üzerinde eğitilmiş modeller daha iyi sonuç verir.", done: false },
+                    { text: "YOLO tespitlerini TCTrack++ input formatına dönüştürün.", tech: "YOLO çıktısı [x, y, w, h, conf, class] formatındadır. TCTrack++ için [x1, y1, x2, y2, conf] formatına çevrilmeli.", done: false },
+                    { text: "Takip algoritmasını YOLO detection pipeline'ına entegre edin.", tech: "Her frame'de önce YOLO ile tespit, sonra TCTrack++ ile takip yapın. Kalman filter ve Hungarian algorithm kullanarak nesne-track eşleştirmesi yapar.", done: false },
+                    { text: "Track ID'lerinin tutarlılığını test edin ve ID switch sorunlarını çözün.", tech: "ID switch: aynı nesnenin farklı frame'lerde farklı ID alması. Appearance model ve motion model'i dengeleyerek azaltılabilir.", done: false },
+                    { text: "Alternatif takip algoritmaları için DeepSORT implementasyonu hazırlayın.", tech: "DeepSORT: appearance feature'ları kullanan klasik ama etkili takip algoritması. TCTrack++'dan daha hızlı ama genelde daha az doğru.", done: false },
+                    { text: "ByteTrack algoritmasını test edin ve performansını karşılaştırın.", tech: "ByteTrack: düşük confidence'lı detection'ları da kullanarak takip performansını artıran modern algoritma. Hız-doğruluk dengesinde çok iyi.", done: false },
+                    { text: "En iyi performans gösteren takip algoritmasını seçin ve optimize edin.", tech: "Farklı senaryolarda (hızlı hareket, occlusion, çoklu nesne) test yaparak en uygun algoritmayı belirleyin. Hiperparametrelerini fine-tune edin.", done: false },
+                    { text: "Takip edilen hedefin merkez noktasını ve bounding box'ını hesaplayan mantığı yazın.", tech: "Bounding box merkezini ((x1+x2)/2, (y1+y2)/2) olarak hesaplayın. Smooth trajectory için moving average veya Kalman filter uygulayın.", done: false },
+                    { text: "Hedef kaybolma durumları için re-identification sistemi kurun.", tech: "Re-ID: kısa süreli kaybolmalarda aynı nesneyi tekrar tanıma. Appearance feature'ları kullanarak cosine similarity ile eşleştirme yapın.", done: false }
                 ]
             },
             {
                 name: "FAZ 3: Yapay Hakem Sunucusu ile Haberleşme",
                 description: "Bu faz, yarışma kurallarına uymak ve puan kazanmak için kritiktir.",
                 tasks: [
-                    { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır.", done: false },
-                    { text: "Python'da socket veya asyncio ile haberleşme modülü geliştirin.", tech: "asyncio, Python'da asenkron programlama için kullanılan kütüphanedir.", done: false },
-                    { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", done: false },
-                    { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", tech: "Mock sunucu, gerçek sunucu yokken test yapmak için kullanılan simülasyon aracıdır.", done: false },
-                    { text: "Hata durumlarında yeniden bağlanma (reconnection) mekanizması ekleyin.", done: false }
+                    { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır. TCP güvenilir, UDP hızlı iletim sağlar.", done: false },
+                    { text: "Network protokol testleri yapın ve bağlantı stabilitesini ölçün.", tech: "ping, traceroute, iperf3 araçları ile network performansını test edin. Packet loss ve latency değerlerini kaydedin.", done: false },
+                    { text: "Python'da socket veya asyncio ile haberleşme modülü geliştirin.", tech: "asyncio, Python'da asenkron programlama için kullanılan kütüphanedir. Blocking olmayan I/O operasyonları sağlar, çoklu bağlantı yönetimi için idealdir.", done: false },
+                    { text: "JSON mesaj formatlarını tanımlayın ve serialize/deserialize fonksiyonları yazın.", tech: "JSON schema kullanarak mesaj formatlarını standardize edin. Python'da json.dumps() ve json.loads() kullanın. Validation için jsonschema kütüphanesi ekleyin.", done: false },
+                    { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", tech: "Ana thread'de görüntü işleme, ayrı thread'de haberleşme yapın. Queue yapısı ile veri paylaşımı sağlayın. Event-driven architecture kullanın.", done: false },
+                    { text: "Heartbeat mekanizması ekleyerek bağlantı durumunu izleyin.", tech: "Belirli aralıklarla ping mesajı gönderin. Response gelmezse bağlantı kopmuş kabul edin. Timeout değerleri yarışma kurallarına göre ayarlayın.", done: false },
+                    { text: "Hata durumlarında yeniden bağlanma (reconnection) mekanizması ekleyin.", tech: "Exponential backoff algoritması kullanarak yeniden bağlanma denemeleri yapın. Maximum retry sayısı ve timeout değerleri belirleyin.", done: false },
+                    { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", tech: "Mock sunucu, gerçek sunucu yokken test yapmak için kullanılan simülasyon aracıdır. Python socket server ile çeşitli senaryoları test edebilirsiniz.", done: false },
+                    { text: "Message queue sistemi kurun ve buffer overflow durumlarını yönetin.", tech: "Mesajları sıraya alarak gönderim yapın. Queue doluysa eski mesajları silin. Priority queue kullanarak kritik mesajlara öncelik verin.", done: false },
+                    { text: "Encryption/Authentication mekanizması ekleyin (gerekiyorsa).", tech: "SSL/TLS kullanarak şifreli iletişim kurun. API key veya token tabanlı authentication implementasyonu yapın.", done: false }
                 ]
             },
             {
@@ -176,26 +198,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: "FAZ 5: QR Kod Görevi",
                 description: "Bu faz, yarışmanın otonom görevlerinden biri olan QR kodun tespiti ve okunmasını kapsar.",
                 tasks: [
-                    { text: "pyzbar veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", tech: "pyzbar, QR kod ve barkod okuma için özel geliştirilmiş Python kütüphanesidir.", done: false },
-                    { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", done: false },
-                    { text: "Kamera akışından gelen görüntülerde QR kodlarını tespit edip çözen (decode) bir fonksiyon yazın.", done: false },
-                    { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", done: false },
-                    { text: "QR kod tespit performansını artırmak için görüntü iyileştirme teknikleri uygulayın.", done: false },
-                    { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", done: false }
+                    { text: "QR kod tespit kütüphanelerini araştırın ve karşılaştırın (pyzbar, OpenCV, ZXing).", tech: "pyzbar: En hızlı ve güvenilir Python QR kod kütüphanesi. OpenCV: QRCodeDetector sınıfı ile detection. ZXing: Java tabanlı ama Python wrapper'ı var.", done: false },
+                    { text: "Seçilen kütüphaneyi kurun ve temel QR kod okuma testi yapın.", tech: "pip install pyzbar komutu ile kurulum. libzbar-dev sistem kütüphanesi gerekebilir. Test için bilinen QR kod ile accuracy test yapın.", done: false },
+                    { text: "QR kod tespit performansını optimize etmek için görüntü preprocessing teknikleri uygulayın.", tech: "Gaussian blur, adaptive threshold, morphological operations ile görüntü kalitesini artırın. Contrast ve brightness ayarları kritik.", done: false },
+                    { text: "Farklı açı ve mesafelerden QR kod tespiti için perspective correction ekleyin.", tech: "Perspective transformation ile QR kodu düzleştirin. cv2.getPerspectiveTransform() ve cv2.warpPerspective() kullanın.", done: false },
+                    { text: "Multi-scale detection implementasyonu yapın.", tech: "Görüntüyü farklı boyutlarda resize ederek QR kod tespiti yapın. Pyramid approach ile küçük QR kodları da yakalayın.", done: false },
+                    { text: "QR kod bounding box'ını tespit edin ve position tracking ekleyin.", tech: "pyzbar polygon koordinatları verir. Center point hesaplayın ve Kalman filter ile smooth tracking sağlayın.", done: false },
+                    { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", tech: "Main detection loop'a QR detection ekleyin. YOLO ile çakışma olmaması için region-based processing yapabilirsiniz.", done: false },
+                    { text: "QR kod içeriğini parse edin ve validation kontrolleri ekleyin.", tech: "QR kod format kontrolü (URL, text, JSON vb.). Checksum validation ve content filtering. Malformed QR kodlara karşı exception handling.", done: false },
+                    { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", tech: "Distance: 1m-50m arası. Angle: 0°-45° tilt. Lighting: gündüz, gece, gölge. Her koşulda minimum %90 detection rate hedefleyin.", done: false },
+                    { text: "QR kod tespit hızını optimize edin ve real-time performans sağlayın.", tech: "ROI (Region of Interest) kullanarak sadece belirli bölgeyi tara. Frame skipping ile computation load azaltın. Target: <50ms detection time.", done: false },
+                    { text: "Multiple QR kod desteği ekleyin ve ID tracking sistemi kurun.", tech: "Birden fazla QR kod aynı anda tespit edebilme. Her QR kod için unique tracking ID. Spatial clustering ile yakın QR kodları gruplayın.", done: false },
+                    { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", tech: "QR kod içeriğine göre mission logic trigger edin. JSON format ile sunucuya bildirim gönder. Timestamp ve GPS koordinatı ekleyin.", done: false },
+                    { text: "QR kod false positive'lerini azaltmak için filtering algoritması geliştirin.", tech: "Size filtering (min/max area), aspect ratio kontrolü, format validation. Machine learning tabanlı QR vs non-QR classification.", done: false }
                 ]
             },
             {
                 name: "FAZ 6: Yer İstasyonu Arayüzü (UI)",
                 description: "Bu faz, yarışma sırasında operatörün sistemi etkin bir şekilde izlemesi ve yönetmesi için kullanıcı arayüzünün geliştirilmesini içerir.",
                 tasks: [
-                    { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", done: false },
-                    { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", tech: "PyQt, Python için geliştirilmiş masaüstü GUI framework'üdür. Web tabanlı çözümler ise tarayıcı üzerinden erişim sağlar.", done: false },
-                    { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", done: false },
-                    { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", tech: "Telemetri, uzaktan ölçüm verilerinin aktarılması ve izlenmesi anlamına gelir.", done: false },
-                    { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", done: false },
-                    { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false },
-                    { text: "Sistem durumu ve hata mesajları için bir log/konsol alanı entegre edin.", done: false },
-                    { text: "Arayüzün farklı ekran boyutlarında çalışması için responsive tasarım uygulayın.", done: false }
+                    { text: "UI framework'ü seçin ve karşılaştırma yapın (PyQt, Tkinter, Web-based).", tech: "PyQt: Native performans, rich widgets. Tkinter: Python built-in, basit. Web-based: Platform bağımsız, modern görünüm. Real-time video için PyQt önerilir.", done: false },
+                    { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", tech: "Grid layout kullanın: %60 video, %20 telemetry, %20 controls. Responsive design için relative sizing. Dark theme pilot yorgunluğunu azaltır.", done: false },
+                    { text: "Real-time video display widget'ı geliştirin ve optimize edin.", tech: "QLabel veya QGraphicsView kullanın. Frame rate limiting (30 FPS), buffer management. Hardware acceleration için OpenGL backend kullanın.", done: false },
+                    { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", tech: "Threading ile video reception yapın. Queue size'ı sınırlayın (max 3 frame buffer). DirectShow/V4L2 native capture kullanın.", done: false },
+                    { text: "Video overlay sistemi kurun (crosshair, bounding boxes, telemetry data).", tech: "QPainter ile custom overlay çizin. Transparent layers kullanın. Color coding: Red=target, Green=locked, Yellow=tracking.", done: false },
+                    { text: "Önemli telemetry verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", tech: "Telemetri: uzaktan ölçüm verilerinin aktarılması ve izlenmesi. Update rate 10Hz yeterli. Critical values için threshold alarms ekleyin.", done: false },
+                    { text: "Telemetry data logging ve historical charts geliştirin.", tech: "SQLite database kullanın. Matplotlib widget ile real-time plotting. Time-series data için pandas kullanın. Export functionality ekleyin.", done: false },
+                    { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", tech: "Rectangle overlay ile bounding box çizin. Target ID, confidence score, distance bilgilerini label olarak gösterin.", done: false },
+                    { text: "Mission control panel'i tasarlayın ve implement edin.", tech: "Start/Stop/Pause buttons, emergency stop, mission mode selector, waypoint editor. State machine ile mission flow'u kontrol edin.", done: false },
+                    { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", tech: "Big red button for emergency stop. Confirmation dialogs for critical actions. Keyboard shortcuts (Space=start, Esc=stop).", done: false },
+                    { text: "System health monitoring ekleyin (CPU, GPU, network, battery).", tech: "System metrics için psutil kullanın. Battery level, signal strength, computational load. Color-coded status indicators.", done: false },
+                    { text: "Sistem durumu ve hata mesajları için bir log/konsol alanı entegre edin.", tech: "QTextEdit widget ile scrollable log. Log levels: DEBUG, INFO, WARNING, ERROR. Auto-scroll to bottom, search functionality.", done: false },
+                    { text: "Arayüzün farklı ekran boyutlarında çalışması için responsive tasarım uygulayın.", tech: "Minimum resolution: 1024x768. Scalable fonts ve icons. Layout managers ile automatic resizing. Multi-monitor support.", done: false },
+                    { text: "Kullanıcı ayarları ve configuration management sistemi kurun.", tech: "JSON config file ile settings storage. User preferences: video quality, update rates, alarm thresholds. Runtime parameter tuning.", done: false },
+                    { text: "Performance profiling yapın ve UI lag'ini minimize edin.", tech: "QTimer ile regulated updates. Heavy computation'ları background thread'lerde yapın. Frame dropping ile UI responsiveness koruyun.", done: false }
                 ]
             }
         ];
