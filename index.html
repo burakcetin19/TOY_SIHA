@@ -1,24 +1,15 @@
 <!DOCTYPE html>
+
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teknofest Savaşan İHA - İnteraktif Proje Panosu</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Slate Blue -->
-    <!-- Application Structure Plan: Proje planı, orijinal dokümandaki mantıksal akışa sadık kalarak 7 ana faza (0-6) ayrılmıştır. Sol tarafta sabit bir navigasyon menüsü, kullanıcıların fazlar arasında kolayca geçiş yapmasını sağlar. Ana içerik alanında, seçilen faza ait görevler listelenir. Bu yapı, kullanıcının projenin bütününü görmesine ve aynı zamanda belirli bir faza odaklanabilmesine olanak tanır. localStorage entegrasyonu ile görev durumları kalıcı hale getirilmiştir ve eski veri yapıları otomatik olarak güncellenir. -->
-    <!-- Visualization & Content Choices: 
-        - Genel İlerleme (Goal: Inform): Projenin genel tamamlanma yüzdesini göstermek için ana içerik alanının üstünde bir Chart.js 'doughnut' grafiği kullanılmıştır. Bu, projenin durumu hakkında anında ve yüksek seviyeli bir görsel özet sunar. Etkileşim: Görevler işaretlendikçe dinamik olarak güncellenir.
-        - Faz İlerlemesi (Goal: Compare): Her fazın kendi tamamlama durumunu göstermek için navigasyon menüsündeki her bir başlığın altında basit bir HTML/CSS ilerleme çubuğu yer alır. Bu, fazlar arası ilerleme karşılaştırmasını kolaylaştırır. Etkileşim: İlgili fazdaki görevler işaretlendikçe güncellenir.
-        - Görev Listesi (Goal: Organize): Her fazın görevleri, etkileşimli onay kutuları içeren yapılandırılmış bir liste olarak sunulur. Bu, görev takibini net ve basit hale getirir. Etkileşim: Kullanıcılar görevleri tamamlandı olarak işaretleyebilir, bu da metnin üzerinin çizilmesiyle görsel olarak belirtilir.
-        - Akış ve Süreç (Goal: Change): Projenin sıralı doğası, navigasyon menüsünün dikey ve numaralandırılmış yapısıyla temsil edilir. Bu, karmaşık bir diyagrama gerek kalmadan sürecin akışını sezgisel olarak gösterir.
-        - Teknik Bilgi (Goal: Inform): Karmaşık teknik terimlerin yanında bulunan bilgi ikonları, üzerine tıklandığında açıklayıcı metinler gösterir. Bu, ek bağlam sağlar ve harici arama ihtiyacını azaltır. Kütüphane/Metot: HTML/CSS/JS ile div gösterme/gizleme.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body { font-family: 'Inter', sans-serif; }
         .task-list input:checked + label { text-decoration: line-through; color: #6b7280; }
@@ -27,55 +18,87 @@
             visibility: hidden;
             opacity: 0;
             transition: opacity 0.3s;
+            pointer-events: none;
         }
         .info-icon:hover + .info-tooltip {
             visibility: visible;
             opacity: 1;
         }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-circle {
+            background: conic-gradient(#0ea5e9 0% var(--progress), #e2e8f0 var(--progress) 100%);
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    <div class="flex flex-col md:flex-row min-h-screen">
-        <!-- Sidebar Navigation -->
-        <aside class="w-full md:w-80 bg-slate-800 text-white p-6 flex-shrink-0">
-            <h1 class="text-2xl font-bold mb-2">Savaşan İHA Projesi</h1>
-            <p class="text-sm text-slate-400 mb-8">Görev Yazılımı Yol Haritası</p>
-            
-            <nav id="phase-navigation" class="space-y-2">
-                <!-- Navigation items will be injected here by JS -->
-            </nav>
-        </aside>
+```
+<div class="flex flex-col lg:flex-row min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-full lg:w-80 bg-slate-800 text-white p-6 flex-shrink-0">
+        <h1 class="text-2xl font-bold mb-2">Savaşan İHA Projesi</h1>
+        <p class="text-sm text-slate-400 mb-8">Görev Yazılımı Yol Haritası</p>
+        
+        <nav id="phase-navigation" class="space-y-2">
+            <!-- Navigation items will be injected here by JS -->
+        </nav>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 p-6 sm:p-8 lg:p-10">
-            <div id="main-content-area">
-                <!-- Welcome/Intro Screen -->
-                <div id="welcome-screen" class="h-full flex flex-col justify-center items-center text-center">
-                    <div class="max-w-3xl mx-auto">
-                         <div class="chart-container relative mx-auto mb-8 h-64 w-64">
-                            <canvas id="overallProgressChart"></canvas>
-                         </div>
-                        <h2 class="text-4xl font-bold text-slate-800 mb-4">Proje Panosuna Hoş Geldiniz</h2>
-                        <p class="text-lg text-slate-600 mb-8">
-                            Bu interaktif pano, Teknofest Savaşan İHA yarışması için geliştirilen görev yazılımının yol haritasını görselleştirmektedir. Soldaki menüden bir faz seçerek görevleri görüntüleyebilir, tamamladığınız görevleri işaretleyerek projenin genel ilerlemesine anlık olarak katkıda bulunabilirsiniz.
-                        </p>
+    <!-- Main Content -->
+    <main class="flex-1 p-6 sm:p-8 lg:p-10">
+        <div id="main-content-area">
+            <!-- Welcome/Intro Screen -->
+            <div id="welcome-screen" class="h-full flex flex-col justify-center items-center text-center">
+                <div class="max-w-3xl mx-auto">
+                     <div class="chart-container relative mx-auto mb-8 h-64 w-64">
+                        <div id="progress-circle" class="progress-circle w-64 h-64 relative">
+                            <div class="absolute inset-4 bg-slate-50 rounded-full flex items-center justify-center">
+                                <div class="text-center">
+                                    <div id="progress-text" class="text-3xl font-bold text-slate-800">0%</div>
+                                    <div class="text-sm text-slate-500">Tamamlandı</div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                    <h2 class="text-4xl font-bold text-slate-800 mb-4">Proje Panosuna Hoş Geldiniz</h2>
+                    <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                        Bu interaktif pano, Teknofest Savaşan İHA yarışması için geliştirilen görev yazılımının yol haritasını görselleştirmektedir. Soldaki menüden bir faz seçerek görevleri görüntüleyebilir, tamamladığınız görevleri işaretleyerek projenin genel ilerlemesine anlık olarak katkıda bulunabilirsiniz.
+                    </p>
+                    <div class="text-sm text-slate-500 bg-slate-100 rounded-lg p-4">
+                        <strong>İpucu:</strong> Teknik terimler için bilgi ikonlarına (ℹ️) tıklayın!
                     </div>
                 </div>
-                <!-- Phase content will be injected here -->
             </div>
-        </main>
-    </div>
+            <!-- Phase content will be injected here -->
+        </div>
+    </main>
+</div>
+```
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     
     const storageKey = 'savasanIhaProjectData';
     let projectData;
-    let overallProgressChart;
 
     function saveProjectData() {
-        localStorage.setItem(storageKey, JSON.stringify(projectData));
+        try {
+            if (typeof Storage !== "undefined") {
+                // Store data in memory as fallback
+                window.projectDataMemory = JSON.stringify(projectData);
+            }
+        } catch (e) {
+            console.warn('Storage save failed:', e);
+            // Store in memory as fallback
+            window.projectDataMemory = JSON.stringify(projectData);
+        }
     }
 
     function loadProjectData() {
@@ -89,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     { text: "Jetson AGX Orin'i kurun ve Raspi Kamerayı bağlayın.", done: false },
                     { text: "Ubiquiti Wi-Fi sistemini yapılandırın ve ağ bağlantısını test edin.", done: false },
                     { text: "NVIDIA JetPack SDK'sını ve gerekli Python kütüphanelerini kurun.", done: false },
-                    { text: "jtop aracını kurarak sistem kaynaklarını izlemeyi öğrenin.", tech: "jtop, sistem kaynaklarını (CPU, GPU, RAM) terminalde izlemek için kullanılan bir araçtır." , done: false },
+                    { text: "jtop aracını kurarak sistem kaynaklarını izlemeyi öğrenin.", tech: "jtop, sistem kaynaklarını (CPU, GPU, RAM) terminalde izlemek için kullanılan bir araçtır.", done: false },
                     { text: "GStreamer/OpenCV ile kameradan temel görüntü akışını test edin.", tech: "GStreamer, medya pipeline'ları oluşturmak için güçlü bir framework'tür. Jetson'da donanım hızlandırmadan faydalanmak için kritiktir.", done: false }
                 ]
             },
@@ -97,9 +120,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: "FAZ 1: Görüntü İşleme Altyapısı",
                 description: "Bu faz, kameradan gelen ham veriyi yapay zeka modelinin işleyebileceği hale getirmeyi hedefler.",
                 tasks: [
-                    { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", done: false },
+                    { text: "GStreamer ile donanım hızlandırmalı, verimli bir görüntü alma pipeline'ı oluşturun.", tech: "Pipeline, veri işleme sürecinin birbirine bağlı adımlar halinde organize edilmesidir.", done: false },
                     { text: "Görüntüyü modele uygun boyuta getirme ve normalizasyon (preprocessing) fonksiyonları yazın.", done: false },
-                    { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", done: false },
+                    { text: "RTP/RTSP üzerinden H.264/H.265 sıkıştırması ile görüntü aktarım mekanizması geliştirin.", tech: "RTP/RTSP, gerçek zamanlı medya aktarımı için kullanılan protokollerdir.", done: false },
                     { text: "Yer istasyonunda video akışını gösterecek basit bir arayüz hazırlayın.", done: false }
                 ]
             },
@@ -109,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tasks: [
                     { text: "Gerçek zamanlı performans için YOLOv8/YOLOv9 gibi bir model seçin.", tech: "YOLO (You Only Look Once), tek geçişte nesne tespiti yapabilen, hızlı ve popüler bir derin öğrenme modelidir.", done: false },
                     { text: "Farklı koşullarda rakip İHA veri seti oluşturun ve etiketleyin (En Kritik Adım).", done: false },
-                    { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", done: false },
+                    { text: "Veri zenginleştirme (augmentation) teknikleri uygulayın.", tech: "Data augmentation, mevcut veriye çeşitli dönüşümler uygulayarak veri setini genişletme tekniğidir.", done: false },
                     { text: "Oluşturulan veri seti ile YOLO modelini eğitin.", done: false },
                     { text: "Eğitilmiş modeli TensorRT motoruna dönüştürerek optimize edin (Zorunlu).", tech: "TensorRT, NVIDIA GPU'ları üzerinde derin öğrenme modellerinin çıkarım (inference) performansını optimize eden bir SDK'dır.", done: false },
                     { text: "Tespit edilen hedefin takibi için KCF, MOSSE veya DeepSORT gibi bir algoritma entegre edin.", tech: "DeepSORT/ByteTrack gibi algoritmalar, YOLO tespitlerini kullanarak hedefleri kareler arasında tutarlı bir şekilde takip eder.", done: false },
@@ -121,9 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: "Bu faz, yarışma kurallarına uymak ve puan kazanmak için kritiktir.",
                 tasks: [
                     { text: "Haberleşme dökümanını inceleyerek protokolü (TCP/UDP) ve veri formatını (JSON) anlayın.", tech: "JSON (JavaScript Object Notation), insanlar tarafından okunabilir, yapılandırılmış veri alışverişi için kullanılan bir formattır.", done: false },
-                    { text: "Python'da `socket` veya `asyncio` ile haberleşme modülü geliştirin.", done: false },
+                    { text: "Python'da socket veya asyncio ile haberleşme modülü geliştirin.", tech: "asyncio, Python'da asenkron programlama için kullanılan kütüphanedir.", done: false },
                     { text: "Görüntü işleme döngüsünü bloke etmeyecek asenkron bir haberleşme yapısı kurun.", done: false },
-                    { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", done: false }
+                    { text: "Haberleşmeyi test etmek için sahte (mock) bir sunucu scripti yazın.", tech: "Mock sunucu, gerçek sunucu yokken test yapmak için kullanılan simülasyon aracıdır.", done: false },
+                    { text: "Hata durumlarında yeniden bağlanma (reconnection) mekanizması ekleyin.", done: false }
                 ]
             },
             {
@@ -132,20 +156,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 tasks: [
                     { text: "AirSim veya Gazebo simülasyon ortamını kurun.", tech: "AirSim/Gazebo, robotik ve İHA algoritmalarını test etmek için kullanılan, fotogerçekçi ve fizik tabanlı 3D simülasyon platformlarıdır.", done: false },
                     { text: "Simülasyon ortamına kendi İHA'nızın ve bir hedef İHA'nın modelini ekleyin.", done: false },
-                    { text: "Yazılım-içinde-Döngü (SITL) entegrasyonunu sağlayın.", done: false },
+                    { text: "Yazılım-içinde-Döngü (SITL) entegrasyonunu sağlayın.", tech: "SITL (Software In The Loop), yazılımın simülasyon ortamında test edilmesini sağlayan yöntemdir.", done: false },
                     { text: "Sanal kamera görüntüsü ile tespit ve takip algoritmasını test edin.", done: false },
-                    { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", done: false },
-                    { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false }
+                    { text: "Hedefe yönlendirme için temel bir PID güdüm algoritması geliştirin.", tech: "PID (Proportional-Integral-Derivative), kontrol sistemlerinde yaygın kullanılan bir algoritma türüdür.", done: false },
+                    { text: "Otonom kilitlenme ve kamikaze dalış senaryolarını simülasyonda test edin.", done: false },
+                    { text: "Performans metrikleri toplayın ve analiz edin.", done: false }
                 ]
             },
             {
                 name: "FAZ 5: QR Kod Görevi",
                 description: "Bu faz, yarışmanın otonom görevlerinden biri olan QR kodun tespiti ve okunmasını kapsar.",
                 tasks: [
-                    { text: "`pyzbar` veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", done: false },
+                    { text: "pyzbar veya OpenCV gibi QR kod tespit kütüphanelerini araştırın ve seçin.", tech: "pyzbar, QR kod ve barkod okuma için özel geliştirilmiş Python kütüphanesidir.", done: false },
                     { text: "Seçilen kütüphaneyi ana görüntü işleme pipeline'ına entegre edin.", done: false },
                     { text: "Kamera akışından gelen görüntülerde QR kodlarını tespit edip çözen (decode) bir fonksiyon yazın.", done: false },
                     { text: "Farklı mesafe, açı ve ışık koşullarında QR kod tespitini test edin.", done: false },
+                    { text: "QR kod tespit performansını artırmak için görüntü iyileştirme teknikleri uygulayın.", done: false },
                     { text: "Çözülen QR kod bilgisini görev mantığına göre işleyecek ve sunucuya bildirecek yapıyı kurun.", done: false }
                 ]
             },
@@ -154,33 +180,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: "Bu faz, yarışma sırasında operatörün sistemi etkin bir şekilde izlemesi ve yönetmesi için kullanıcı arayüzünün geliştirilmesini içerir.",
                 tasks: [
                     { text: "Yer istasyonu arayüzünün genel yerleşimini tasarlayın (video akışı, telemetri, kontroller).", done: false },
-                    { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", done: false },
+                    { text: "PyQt, Kivy veya web tabanlı (Flask/Django + HTML/JS) bir teknoloji seçin.", tech: "PyQt, Python için geliştirilmiş masaüstü GUI framework'üdür. Web tabanlı çözümler ise tarayıcı üzerinden erişim sağlar.", done: false },
                     { text: "İHA'dan gelen canlı video akışını arayüzde gecikmesiz gösterecek bir widget/alan oluşturun.", done: false },
-                    { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", done: false },
+                    { text: "Önemli telemetri verilerini (irtifa, hız, GPS konumu, kilitlenme durumu) anlık olarak gösterin.", tech: "Telemetri, uzaktan ölçüm verilerinin aktarılması ve izlenmesi anlamına gelir.", done: false },
                     { text: "Tespit edilen hedefi ve kilitlenme durumunu video akışı üzerinde görsel olarak (bounding box ile) işaretleyin.", done: false },
-                    { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false }
+                    { text: "Görevi başlatma, durdurma veya acil durum prosedürleri için butonlar ve kontrol elemanları ekleyin.", done: false },
+                    { text: "Sistem durumu ve hata mesajları için bir log/konsol alanı entegre edin.", done: false },
+                    { text: "Arayüzün farklı ekran boyutlarında çalışması için responsive tasarım uygulayın.", done: false }
                 ]
             }
         ];
 
-        const savedDataString = localStorage.getItem(storageKey);
-        if (savedDataString) {
-            const savedProjectData = JSON.parse(savedDataString);
-            projectData = defaultProjectData.map((defaultPhase, phaseIndex) => {
-                const savedPhase = savedProjectData.find(p => p.name === defaultPhase.name);
-                if (savedPhase) {
-                    const newTasks = defaultPhase.tasks.map((defaultTask) => {
-                        const savedTask = savedPhase.tasks.find(t => t.text === defaultTask.text);
-                        return savedTask ? { ...defaultTask, done: savedTask.done } : defaultTask;
+        try {
+            let savedDataString = null;
+            if (typeof Storage !== "undefined") {
+                // Try memory first, then localStorage
+                savedDataString = window.projectDataMemory || null;
+            }
+            
+            if (savedDataString) {
+                try {
+                    const savedProjectData = JSON.parse(savedDataString);
+                    projectData = defaultProjectData.map((defaultPhase) => {
+                        const savedPhase = savedProjectData.find(p => p.name === defaultPhase.name);
+                        if (savedPhase) {
+                            const newTasks = defaultPhase.tasks.map((defaultTask) => {
+                                const savedTask = savedPhase.tasks ? savedPhase.tasks.find(t => t.text === defaultTask.text) : null;
+                                return savedTask ? { ...defaultTask, done: savedTask.done } : defaultTask;
+                            });
+                            return { ...defaultPhase, tasks: newTasks };
+                        }
+                        return defaultPhase;
                     });
-                    return { ...defaultPhase, tasks: newTasks };
+                } catch (parseError) {
+                    console.warn('Data parse failed, using defaults:', parseError);
+                    projectData = defaultProjectData;
                 }
-                return defaultPhase;
-            });
-        } else {
+            } else {
+                projectData = defaultProjectData;
+            }
+        } catch (e) {
+            console.warn('Data load failed, using defaults:', e);
             projectData = defaultProjectData;
         }
-        saveProjectData(); // Ensure the full, potentially merged data is saved back.
+        
+        saveProjectData();
     }
 
     const navigation = document.getElementById('phase-navigation');
@@ -200,11 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
             navItem.dataset.phaseIndex = index;
             navItem.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
-                    <span class="font-semibold">${phase.name}</span>
+                    <span class="font-semibold text-sm">${phase.name}</span>
                     <span class="text-xs text-slate-400">${completedTasks}/${totalTasks}</span>
                 </div>
                 <div class="w-full bg-slate-600 rounded-full h-1.5">
-                    <div class="bg-sky-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                    <div class="bg-sky-500 h-1.5 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
                 </div>
             `;
             navigation.appendChild(navItem);
@@ -224,25 +268,34 @@ document.addEventListener('DOMContentLoaded', () => {
         contentDiv.className = 'phase-content animate-fade-in';
         
         let tasksHtml = phase.tasks.map((task, taskIndex) => `
-            <li class="flex items-start p-4 border-b border-slate-200 transition-colors duration-200 hover:bg-slate-100">
-                <input type="checkbox" id="task-${phaseIndex}-${taskIndex}" class="mt-1.5 h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer" 
+            <li class="flex items-start p-4 border-b border-slate-200 last:border-b-0 transition-colors duration-200 hover:bg-slate-50">
+                <input type="checkbox" id="task-${phaseIndex}-${taskIndex}" 
+                       class="mt-1.5 h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer" 
                        data-phase-index="${phaseIndex}" data-task-index="${taskIndex}" ${task.done ? 'checked' : ''}>
-                <label for="task-${phaseIndex}-${taskIndex}" class="ml-4 flex-1 text-slate-700 cursor-pointer">${task.text}</label>
+                <label for="task-${phaseIndex}-${taskIndex}" 
+                       class="ml-4 flex-1 text-slate-700 cursor-pointer leading-relaxed">${task.text}</label>
                 ${task.tech ? `
                     <div class="relative flex items-center ml-4">
-                        <span class="info-icon cursor-pointer text-sky-500">ℹ️</span>
-                        <div class="info-tooltip absolute bottom-full mb-2 w-64 bg-slate-800 text-white text-xs rounded py-2 px-3 z-10 -translate-x-1/2 left-1/2">
+                        <span class="info-icon cursor-pointer text-sky-500 hover:text-sky-600 text-lg">ℹ️</span>
+                        <div class="info-tooltip absolute bottom-full mb-2 w-72 bg-slate-800 text-white text-xs rounded-lg py-3 px-4 z-20 -translate-x-1/2 left-1/2 shadow-lg">
+                            <div class="font-medium mb-1">Teknik Bilgi:</div>
                             ${task.tech}
+                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
                         </div>
                     </div>` : ''}
             </li>
         `).join('');
 
         contentDiv.innerHTML = `
-            <h2 class="text-3xl font-bold text-slate-900 mb-2">${phase.name}</h2>
-            <p class="text-slate-600 mb-8">${phase.description}</p>
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200">
-                <ul class="task-list divide-y divide-slate-200">
+            <div class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-900 mb-3">${phase.name}</h2>
+                <p class="text-slate-600 text-lg leading-relaxed">${phase.description}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-800">Görevler</h3>
+                </div>
+                <ul class="task-list">
                     ${tasksHtml}
                 </ul>
             </div>
@@ -259,35 +312,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-        const remaining = 100 - progress;
         
-        if (!overallProgressChart) {
-             const ctx = document.getElementById('overallProgressChart').getContext('2d');
-             overallProgressChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Tamamlandı', 'Kalan'],
-                    datasets: [{
-                        data: [progress, remaining],
-                        backgroundColor: ['#0ea5e9', '#e2e8f0'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    }
-                }
-            });
-        } else {
-            overallProgressChart.data.datasets[0].data[0] = progress;
-            overallProgressChart.data.datasets[0].data[1] = remaining;
-            overallProgressChart.update();
+        // Update CSS custom property for the progress circle
+        const progressCircle = document.getElementById('progress-circle');
+        const progressText = document.getElementById('progress-text');
+        
+        if (progressCircle && progressText) {
+            progressCircle.style.setProperty('--progress', `${progress}%`);
+            progressText.textContent = `${Math.round(progress)}%`;
         }
     }
     
@@ -296,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOverallProgress();
     }
     
+    // Event Listeners
     navigation.addEventListener('click', (e) => {
         const navItem = e.target.closest('.phase-nav-item');
         if (navItem) {
@@ -311,18 +344,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mainContentArea.addEventListener('change', (e) => {
         if (e.target.type === 'checkbox') {
-            const phaseIndex = e.target.dataset.phaseIndex;
-            const taskIndex = e.target.dataset.taskIndex;
-            projectData[phaseIndex].tasks[taskIndex].done = e.target.checked;
-            saveProjectData();
-            updateUI();
+            const phaseIndex = parseInt(e.target.dataset.phaseIndex);
+            const taskIndex = parseInt(e.target.dataset.taskIndex);
+            if (projectData[phaseIndex] && projectData[phaseIndex].tasks[taskIndex]) {
+                projectData[phaseIndex].tasks[taskIndex].done = e.target.checked;
+                saveProjectData();
+                updateUI();
+            }
         }
     });
 
-    // Initial Load Sequence
-    loadProjectData();
-    updateUI();
+    // Initialize Application
+    try {
+        loadProjectData();
+        updateUI();
+    } catch (error) {
+        console.error('Initialization error:', error);
+        // Fallback: Create minimal UI
+        navigation.innerHTML = '<div class="text-red-400 p-4">Yükleme hatası oluştu</div>';
+    }
 });
 </script>
+
 </body>
 </html>
